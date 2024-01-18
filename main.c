@@ -12,99 +12,57 @@
 
 #include "so_long.h"
 
-// int on_destroy(t_data *data)
-// {
-// 	mlx_destroy_window(data->mlx_ptr, data->win_ptr);
-// 	mlx_destroy_display(data->mlx_ptr);
-// 	free(data->mlx_ptr);
-// 	exit(0);
-// 	return (0);
-// }
- 
-// int on_keypress(int keysym, t_data *data)
-// {
-// 	(void)data;
-// 	printf("Pressed key: %d\\n", keysym);
-// 	return (0);
-// }
-
-void	get_row_col(t_data *data)
+int	check_assets(t_data data)
 {
-	char	*line;
-	int		row;
-	int		col;
-
-	col = 0;
-	row = 0;
-	data->fd = open("map/map1.ber", O_RDONLY);
-	if (data->fd == -1)
-		return ;
-	while (1)
+	if ((open(CHARACTER_PATH, O_RDONLY) == -1)
+		|| (open(WALL_PATH, O_RDONLY) == -1)
+		|| (open(TERRAIN_PATH, O_RDONLY) == -1)
+		|| (open(COLLECTIBLE_PATH, O_RDONLY) == -1)
+		|| (open(EXIT_PATH, O_RDONLY) == -1)
+		|| (open(SKELETON_PATH, O_RDONLY) == -1))
 	{
-		line = get_next_line(data->fd);
-		if (line == NULL)
-			break ;
-		col = ft_strlen(line);
-		row++;
-		free(line);
+		invalid_map(data, -1);
+		return (0);
 	}
-	data->col = col;
-	data->row = row;
-	close(data->fd);
+	return (1);
 }
 
-char	**get_map(t_data *data)
+void	launch_game(t_data *data)
 {
-	char	*line;
-	int		i;
-	char	**dest;
-	int fd = open("map/map1.ber", O_RDONLY);
-	
-	dest = malloc(sizeof(char *) * (data->row + 1));
-	printf("%d\n", data->fd);
-	printf("%d\n", fd);
-	if (!dest)
-		return (NULL);
-	i = 0;
-	while (1)
-	{
-		line = get_next_line(data->fd);
-		if (line == NULL)
-			break ;
-		dest[i] = ft_strduplicate(line);
-		if (!dest[i])
-			return (NULL);
-		i++;
-	}
-	free (line);
-	return (dest);
+	data->mlx_ptr = mlx_init();
+	data->win_ptr = mlx_new_window(data->mlx_ptr, 1920, 1080, "So Long");
+	data->assets = ft_img_init(data);
+	ft_put_to_window(*data, data->assets);
+	mlx_hook(data->win_ptr, KeyRelease, KeyReleaseMask, &keycheck, data);
+	mlx_hook(data->win_ptr, DESTROY_NOTIF, NO_EVENT_NASK, &escape, data);
+	mlx_loop(data->mlx_ptr);
+}
+
+void	init_data(t_data *data)
+{
+	data->mlx_ptr = NULL;
+	data->win_ptr = NULL;
+	data->col = 0;
+	data->row = 0;
+	data->fd = 0;
+	data->map = NULL;
+	data->collectibles = 0;
+	data->exit = 0;
+	data->character = 0;
+	data->moves = 0;
+	data->mapname = ft_strdup("map/map1.ber");
 }
 
 int	main(void)
 {
-	t_data data;
-	data.fd = open("map/map1.ber", O_RDONLY);
-	get_row_col(&data);
-	data.map = get_map(&data);
-	int	i = 0;
-	while (data.map[i])
-	{
-		printf("%s\n", data.map[i]);
-		i++;
-	}
-	return 0;
-	// void	*img;
-	// int	img_width;
-	// int	img_height;
+	t_data	data;
 
-	// data.mlx_ptr = mlx_init();
-	// img = mlx_xpm_file_to_image(data.mlx_ptr, path, &img_width, &img_height);
-	// data.win_ptr = mlx_new_window(data.mlx_ptr, 1920, 1080, "Hello world!");
-	// mlx_put_image_to_window(data.mlx_ptr, data.win_ptr, img, 100, 100);
-	// mlx_hook(data.win_ptr, KeyRelease, KeyReleaseMask, &on_keypress, &data);
-	// mlx_hook(data.win_ptr, DestroyNotify, StructureNotifyMask, &on_destroy, &data);
-	// mlx_loop(data.mlx_ptr);
-	// free_tab(data->map);
-	
-
+	init_data(&data);
+	if (!check_assets(data))
+		return (0);
+	if (!check_map(&data))
+		return (0);
+	launch_game(&data);
+	endgame(&data, &data.assets, 1);
+	return (0);
 }

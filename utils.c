@@ -33,3 +33,42 @@ char	*ft_strduplicate(const char *s)
 	dest[i] = '\0';
 	return (dest);
 }
+
+int	ft_arraylen(char **array)
+{
+	int	len;
+
+	len = 0;
+	while (array[len])
+		len++;
+	return (len);
+}
+
+char	**create_new_map(t_data data)
+{
+	char	**dest;
+	int		i;
+	int		j;
+
+	j = 0;
+	i = 0;
+	dest = malloc(sizeof(char *) * (data.row + 1));
+	if (!dest)
+		return (NULL);
+	while (i < data.row)
+	{
+		dest[i] = ft_strdup(data.map[i]);
+		if (!dest[i])
+		{
+			while (j < i)
+			{
+				free(dest[j++]);
+			}
+			free(dest);
+			return (NULL);
+		}
+		i++;
+	}
+	dest[i] = NULL;
+	return (dest);
+}
